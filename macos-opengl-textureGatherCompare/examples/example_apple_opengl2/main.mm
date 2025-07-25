@@ -190,6 +190,42 @@ void linkProgram(GLuint program) {
   checkError("va");
 }
 
+#define ARRAY_SIZE(A) (sizeof(A)/sizeof(A[0]))
+GLenum swizzles[][4] = {
+  { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA },
+  { GL_ONE, GL_ONE, GL_ONE, GL_ONE },
+  { GL_ZERO, GL_ZERO, GL_ZERO, GL_ZERO },
+  { GL_RED, GL_RED, GL_RED, GL_RED },
+  { GL_GREEN, GL_GREEN, GL_GREEN, GL_GREEN },
+  { GL_BLUE, GL_BLUE, GL_BLUE, GL_BLUE },
+  { GL_ALPHA, GL_ALPHA, GL_ALPHA, GL_ALPHA },
+  { GL_ALPHA, GL_BLUE, GL_GREEN, GL_RED },
+};
+GLenum compares[] = {
+  GL_LESS,
+  GL_GREATER,
+};
+
+const char* glEnumToString(GLenum cmp) {
+  switch (cmp) {
+    case GL_LESS: return "less";
+    case GL_GREATER: return "greater";
+    default: return "unknown enum!";
+  }
+}
+
+const char* swizzleToString(GLenum sw) {
+  switch (sw) {
+    case GL_RED: return "r";
+    case GL_GREEN: return "g";
+    case GL_BLUE: return "b";
+    case GL_ALPHA: return "a";
+    case GL_ONE: return "1";
+    case GL_ZERO: return "0";
+    default: return "unknown!!!";
+  }
+}
+
 -(void)updateAndDrawDemoView
 {
   time += 0.016;
@@ -226,23 +262,34 @@ void linkProgram(GLuint program) {
 
   glUseProgram(texProgram);
   glBindTexture(GL_TEXTURE_2D, tex);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_ONE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_ONE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_ONE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, GL_ONE);
+  for (int cmp = 0; cmp < ARRAY_SIZE(compares); ++cmp) {
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, compares[cmp]);
+    NSLog(@"compare: %s", glEnumToString(compares[cmp]));
 
-  glDrawArrays(GL_TRIANGLES, 0, 6);
+    for (int sw = 0; sw < ARRAY_SIZE(swizzles); ++sw) {
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, swizzles[sw][0]);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, swizzles[sw][1]);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, swizzles[sw][2]);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_A, swizzles[sw][3]);
 
-  // Present
-  [[self openGLContext] flushBuffer];
+      glDrawArrays(GL_TRIANGLES, 0, 6);
 
-  std::vector<uint8_t> pixel(4);
-  glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel[0]);
-  checkError("read");
+      // Present
+      [[self openGLContext] flushBuffer];
 
-  NSLog(@"pixel : %d %d %d %d", pixel[0], pixel[1], pixel[2], pixel[3]);
-  NSLog(@"pixel : %f %f %f %f", float(pixel[0]) / 255.0f, float(pixel[1]) / 255.0f, float(pixel[2]) / 255.0f, float(pixel[3]) / 255.0f);
+      std::vector<uint8_t> pixel(4);
+      glReadPixels(0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel[0]);
+      checkError("read");
 
+      NSLog(@"%g %g %g %g : swizzle: %s %s %s %s",
+            float(pixel[0]) / 255.0f, float(pixel[1]) / 255.0f, float(pixel[2]) / 255.0f, float(pixel[3]) / 255.0f,
+            swizzleToString(swizzles[sw][0]),
+            swizzleToString(swizzles[sw][1]),
+            swizzleToString(swizzles[sw][2]),
+            swizzleToString(swizzles[sw][3])
+            );
+    }
+  }
   exit(0);
 }
 
