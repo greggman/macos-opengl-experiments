@@ -113,6 +113,8 @@ GLint compileShader(GLenum type, const char* src)
         NSLog(@"Failed to link!: %s", log);
         NSLog(@"%s", ss.str().c_str());
         exit(1);
+    } else {
+      NSLog(@"success program 1");
     }
 
   GLint program2 = glCreateProgram();
@@ -140,6 +142,8 @@ GLint compileShader(GLenum type, const char* src)
       GLchar *log = (GLchar*)malloc(len);
       glGetProgramInfoLog(program2, len, &len, log);
       NSLog(@"Failed to link!: %s", log);
+  } else {
+    NSLog(@"success program 2");
   }
 
 
@@ -186,6 +190,8 @@ GLint compileShader(GLenum type, const char* src)
     GLenum err = glGetError();
     if (err) {
         NSLog(@"Err Initializing: %x", err);
+    } else {
+      NSLog(@"no error");
     }
 }
 
